@@ -62,5 +62,7 @@ protected:
 
 	TArray<FString> DefaultAESKeys;
 
+	TArray<FString> AESKeyCaches;
+	
 	TSharedPtr<class FAssetParseThreadWorker> AssetParseWorker;
 };
