@@ -38,10 +38,17 @@ FPakAnalyzer::FPakAnalyzer()
 	Reset();
 	InitializeExtractWorker();
 	InitializeAssetParseWorker();
+
+	// Load key cache
+	GConfig->GetArray(TEXT("UnrealPakViewer"), TEXT("UniqueKeyCaches"), AESKeyCaches, GGameIni);
 }
 
 FPakAnalyzer::~FPakAnalyzer()
 {
+	// Save key cache
+	GConfig->SetArray(TEXT("UnrealPakViewer"), TEXT("UniqueKeyCaches"), AESKeyCaches, GGameIni);
+	GConfig->Flush(false, GGameIni);
+	
 	ShutdownAssetParseWorker();
 	ShutdownAllExtractWorker();
 	Reset();
@@ -432,6 +439,19 @@ bool FPakAnalyzer::PreLoadPak(const FString& InPakPath, const FString& InDefault
 
 		if (!bShouldLoad)
 		{
+			for(const auto& AESKey: AESKeyCaches)
+			{
+				bShouldLoad = TryDecryptPak(Reader, Info, AESKey, false);
+				if (bShouldLoad)
+				{
+					OutDecryptKey = AESKey;
+					break;
+				}
+			}
+		}
+
+		if (!bShouldLoad)
+		{
 			if (FPakAnalyzerDelegates::OnGetAESKey.IsBound())
 			{
 				bool bCancel = true;
@@ -441,6 +461,7 @@ bool FPakAnalyzer::PreLoadPak(const FString& InPakPath, const FString& InDefault
 
 					bShouldLoad = !bCancel ? TryDecryptPak(Reader, Info, OutDecryptKey, true) : false;
 				} while (!bShouldLoad && !bCancel);
+
 			}
 			else
 			{
@@ -449,7 +470,13 @@ bool FPakAnalyzer::PreLoadPak(const FString& InPakPath, const FString& InDefault
 				bShouldLoad = false;
 			}
 		}
+		
+		if (bShouldLoad)
+		{
+			AESKeyCaches.AddUnique(OutDecryptKey);
+		}
 	}
+
 
 	Reader->Close();
 	delete Reader;
