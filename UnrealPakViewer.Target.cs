@@ -14,7 +14,7 @@ public class UnrealPakViewerTarget : TargetRules
         SolutionDirectory = "ExternalPrograms";
         DefaultBuildSettings = BuildSettingsVersion.V2;
 
-		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_1;
+		//IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_1;
 		//ExtraModuleNames.Add("EditorStyle");
 
 		// Lean and mean

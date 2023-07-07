@@ -88,6 +88,19 @@ bool FAssetParseThreadWorker::Init()
 	return true;
 }
 
+bool IndexDataEquals(const FPakEntry& A, const FPakEntry& B)
+{
+	// Offset are only in the Index and so are not compared
+	// Hash is only in the payload and so are not compared
+	// Verified is only in the payload and is mutable and so is not compared
+	return A.Size == B.Size &&
+		A.UncompressedSize == B.UncompressedSize &&
+		A.CompressionMethodIndex == B.CompressionMethodIndex &&
+		A.Flags == B.Flags &&
+		A.CompressionBlockSize == B.CompressionBlockSize &&
+		A.CompressionBlocks == B.CompressionBlocks;
+}
+
 uint32 FAssetParseThreadWorker::Run()
 {
 	UE_LOG(LogPakAnalyzer, Display, TEXT("Asset parse worker starts."));
@@ -132,7 +145,7 @@ uint32 FAssetParseThreadWorker::Run()
 			FPakEntry EntryInfo;
 			EntryInfo.Serialize(*ReaderArchive, PakVersion);
 
-			if (EntryInfo.IndexDataEquals(File->PakEntry))
+			if (IndexDataEquals(EntryInfo, File->PakEntry))
 			{
 				FMemoryWriter Writer(FileBuffer, false, true);
 
