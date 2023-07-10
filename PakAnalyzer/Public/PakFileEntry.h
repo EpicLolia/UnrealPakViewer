@@ -106,7 +106,7 @@ struct FPakTreeEntry : public FPakFileEntry
 	float CompressedSizePercentOfParent;
 
 	bool bIsDirectory;
-	TMap<FName, TSharedPtr<FPakTreeEntry>> ChildrenMap;
+	TMultiMap<FName, TSharedPtr<FPakTreeEntry>> ChildrenMap;
 	TMap<FName, FPakClassEntryPtr> FileClassMap;
 
 	FPakTreeEntry(FName InFilename, const FString& InPath, bool bInIsDirectory)

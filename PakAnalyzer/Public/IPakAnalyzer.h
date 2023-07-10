@@ -17,9 +17,9 @@ public:
 	virtual ~IPakAnalyzer() {}
 
 	virtual bool LoadPakFiles(const TArray<FString>& InPakPaths, const TArray<FString>& InDefaultAESKeys) = 0;
-	virtual void GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles) const = 0;
+	virtual void GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles) = 0;
 	virtual const TArray<FPakFileSumaryPtr>& GetPakFileSumary() const = 0;
-	virtual const TArray<FPakTreeEntryPtr>& GetPakTreeRootNode() const = 0;
+	virtual const TArray<FPakTreeEntryPtr>& GetPakTreeRootNode() = 0;
 	virtual void ExtractFiles(const FString& InOutputPath, TArray<FPakFileEntryPtr>& InFiles) = 0;
 	virtual void CancelExtract() = 0;
 	virtual bool ExportToJson(const FString& InOutputPath, const TArray<FPakFileEntryPtr>& InFiles) = 0;

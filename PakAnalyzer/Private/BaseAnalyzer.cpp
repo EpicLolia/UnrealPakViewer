@@ -11,6 +11,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/ArrayReader.h"
+#include "String/ParseTokens.h"
 
 #include "CommonDefines.h"
 
@@ -30,11 +31,11 @@ bool FBaseAnalyzer::LoadPakFiles(const TArray<FString>& InPakPaths, const TArray
 	return false;
 }
 
-void FBaseAnalyzer::GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles) const
+void FBaseAnalyzer::GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles)
 {
 	FScopeLock Lock(const_cast<FCriticalSection*>(&CriticalSection));
 
-	for (FPakTreeEntryPtr PakTreeRoot : PakTreeRoots)
+	for (FPakTreeEntryPtr PakTreeRoot : GetPakTreeRootNode())
 	{
 		RetriveFiles(PakTreeRoot, InFilterText, InClassFilterMap, InPakIndexFilter, OutFiles);
 	}
@@ -45,9 +46,74 @@ const TArray<FPakFileSumaryPtr>& FBaseAnalyzer::GetPakFileSumary() const
 	return PakFileSummaries;
 }
 
-const TArray<FPakTreeEntryPtr>& FBaseAnalyzer::GetPakTreeRootNode() const
+void MergeTreeEntry(FPakTreeEntryPtr Source, FPakTreeEntryPtr Target)
 {
-	return PakTreeRoots;
+	for (auto& Pair : Source->ChildrenMap)
+	{
+		if(!Pair.Value->bIsDirectory)
+		{
+			Target->ChildrenMap.Add(Pair);
+			continue;
+		}
+		
+		if(Target->ChildrenMap.Find(Pair.Key))
+		{
+			MergeTreeEntry(Pair.Value, *Target->ChildrenMap.Find(Pair.Key));
+		}
+		else
+		{
+			Target->ChildrenMap.Add(Pair);
+		}
+	}
+}
+
+const TArray<FPakTreeEntryPtr>& FBaseAnalyzer::GetPakTreeRootNode()
+{
+	if (PakTreeRootAllInOne.Num() > 0)
+	{
+		return PakTreeRootAllInOne;
+	}
+	
+	FPakTreeEntryPtr TreeRoot = MakeShared<FPakTreeEntry>(TEXT("UEGame"), TEXT("../../../"), true);
+	
+	for (FPakTreeEntryPtr TreeEntry : PakTreeRoots)
+	{
+		FPakTreeEntryPtr TargetEntry = TreeRoot;
+		
+		TArray<FString> PathToPak;
+		UE::String::ParseTokens(
+			TargetEntry->Path.Replace(*TreeRoot->Path,TEXT("")), TEXT("/"),
+			[&PathToPak](FStringView Token)
+			{
+				PathToPak.Add(FString(Token));
+			});
+
+		for(int32 Index = 0; Index < PathToPak.Num() - 1; ++Index)
+		{
+			FString FolderName = PathToPak[Index];
+			if(!TargetEntry->ChildrenMap.Find(FName(FolderName)))
+			{
+				TargetEntry->ChildrenMap.Add(FName(FolderName),
+					MakeShared<FPakTreeEntry>(*FolderName, *(TargetEntry->Path + FolderName + '/'), true));
+			}
+			
+			TargetEntry = *TargetEntry->ChildrenMap.Find(FName(FolderName));
+		}
+		
+		MergeTreeEntry(TreeEntry, TargetEntry);
+		
+		TreeEntry.Reset();
+	}
+	
+	RefreshTreeNode(TreeRoot);
+	RefreshTreeNodeSizePercent(TreeRoot, TreeRoot);
+	RefreshClassMap(TreeRoot, TreeRoot);
+	RefreshPackageDependency(TreeRoot, TreeRoot);
+	
+	PakTreeRoots.Empty();
+	PakTreeRootAllInOne.Add(TreeRoot);
+	
+	return PakTreeRootAllInOne;
 }
 
 bool FBaseAnalyzer::LoadAssetRegistry(const FString& InRegristryPath)
@@ -326,6 +392,10 @@ void FBaseAnalyzer::RefreshClassMap(FPakTreeEntryPtr InTreeRoot, FPakTreeEntryPt
 
 void FBaseAnalyzer::RefreshTreeNode(FPakTreeEntryPtr InRoot)
 {
+	InRoot->FileCount = 0;
+	InRoot->Size = 0;
+	InRoot->CompressedSize = 0;
+	
 	for (auto& Pair : InRoot->ChildrenMap)
 	{
 		FPakTreeEntryPtr Child = Pair.Value;
@@ -503,8 +573,14 @@ void FBaseAnalyzer::Reset()
 		Root.Reset();
 	}
 
+	for (FPakTreeEntryPtr Root : PakTreeRootAllInOne)
+	{
+		Root.Reset();
+	}
+
 	PakFileSummaries.Empty();
 	PakTreeRoots.Empty();
+	PakTreeRootAllInOne.Empty();
 
 	AssetRegistryState.Reset();
 
