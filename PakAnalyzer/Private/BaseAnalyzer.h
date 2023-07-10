@@ -20,9 +20,9 @@ public:
 	virtual ~FBaseAnalyzer();
 
 	virtual bool LoadPakFiles(const TArray<FString>& InPakPaths, const TArray<FString>& InDefaultAESKeys) override;
-	virtual void GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles) const override;
+	virtual void GetFiles(const FString& InFilterText, const TMap<FName, bool>& InClassFilterMap, const TMap<int32, bool>& InPakIndexFilter, TArray<FPakFileEntryPtr>& OutFiles) override;
 	virtual const TArray<FPakFileSumaryPtr>& GetPakFileSumary() const override;
-	virtual const TArray<FPakTreeEntryPtr>& GetPakTreeRootNode() const override;
+	virtual const TArray<FPakTreeEntryPtr>& GetPakTreeRootNode() override;
 	virtual bool LoadAssetRegistry(const FString& InRegristryPath) override;
 	virtual bool ExportToJson(const FString& InOutputPath, const TArray<FPakFileEntryPtr>& InFiles) override;
 	virtual bool ExportToCsv(const FString& InOutputPath, const TArray<FPakFileEntryPtr>& InFiles) override;
@@ -52,6 +52,7 @@ protected:
 
 	TArray<FPakFileSumaryPtr> PakFileSummaries;
 	TArray<FPakTreeEntryPtr> PakTreeRoots;
+	TArray<FPakTreeEntryPtr> PakTreeRootAllInOne;
 	TMap<FName, FName> DefaultClassMap;
 
 	FString AssetRegistryPath;
