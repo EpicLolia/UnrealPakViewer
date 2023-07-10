@@ -78,6 +78,12 @@ const TArray<FPakTreeEntryPtr>& FBaseAnalyzer::GetPakTreeRootNode()
 	
 	for (FPakTreeEntryPtr TreeEntry : PakTreeRoots)
 	{
+		if(!TreeEntry->Path.StartsWith(TEXT("../../../")))
+		{
+			PakTreeRootAllInOne.Add(TreeEntry);
+			continue;
+		}
+		
 		FPakTreeEntryPtr TargetEntry = TreeRoot;
 		
 		TArray<FString> PathToPak;
@@ -105,13 +111,17 @@ const TArray<FPakTreeEntryPtr>& FBaseAnalyzer::GetPakTreeRootNode()
 		TreeEntry.Reset();
 	}
 	
-	RefreshTreeNode(TreeRoot);
-	RefreshTreeNodeSizePercent(TreeRoot, TreeRoot);
-	RefreshClassMap(TreeRoot, TreeRoot);
-	RefreshPackageDependency(TreeRoot, TreeRoot);
-	
 	PakTreeRoots.Empty();
-	PakTreeRootAllInOne.Add(TreeRoot);
+
+	if (TreeRoot->ChildrenMap.Num() > 0)
+	{
+		RefreshTreeNode(TreeRoot);
+		RefreshTreeNodeSizePercent(TreeRoot, TreeRoot);
+		RefreshClassMap(TreeRoot, TreeRoot);
+		RefreshPackageDependency(TreeRoot, TreeRoot);
+	
+		PakTreeRootAllInOne.Add(TreeRoot);
+	}
 	
 	return PakTreeRootAllInOne;
 }
