@@ -655,6 +655,10 @@ void FPakAnalyzer::OnAssetParseFinish(bool bCancel, const TMap<FName, FName>& Cl
 				{
 					RefreshClassMap(PakTreeRoot, PakTreeRoot);
 				}
+				for (const FPakTreeEntryPtr& PakTreeRoot : PakTreeRootAllInOne)
+				{
+					RefreshClassMap(PakTreeRoot, PakTreeRoot);
+				}
 			}
 
 			FPakAnalyzerDelegates::OnAssetParseFinish.Broadcast();
