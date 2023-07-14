@@ -15,6 +15,7 @@ public class PakAnalyzer : ModuleRules
 				"Json",
 				"AssetRegistry",
 				"CoreUObject",
+				"OodleDataPlugin",
 			}
 		);
 

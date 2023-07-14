@@ -40,6 +40,7 @@ IMPLEMENT_MODULE(FPakAnalyzerModule, PakAnalyzer);
 void FPakAnalyzerModule::StartupModule()
 {
 	AnalyzerInstance = MakeShared<FBaseAnalyzer>();
+	FModuleManager::Get().LoadModuleChecked("OodleDataPlugin");
 }
 
 void FPakAnalyzerModule::ShutdownModule()
